@@ -683,6 +683,18 @@ python scripts/run_dinov2_photometric_v1.py \
 
           <div class="figure-grid">
             <figure class="figure-card">
+              <img src="assets/figures/push_ppo_return.svg" alt="Push Full-M PPO 训练曲线：环境步数 vs 平均回合回报" loading="lazy">
+              <figcaption>
+                <strong>Push Full-M PPO：步数 vs 回报。</strong>
+                3 seeds（81/82/83），每 update 2,048 transitions，共 2.0M 环境步；
+                细线为逐 update 原始均值，粗线为 25-update 滑动平均；竖点线为验证选中的 update
+                （81: 820、82: 380、83: 600）。右图为平均回合时长。
+                数据：<code>push_so101/train/TRAINING.json</code>、
+                <code>push_extra_seeds/train_seed82/TRAINING.json</code>、
+                <code>train_seed83/TRAINING.json</code>。
+              </figcaption>
+            </figure>
+            <figure class="figure-card">
               <img src="assets/figures/book_disk_training.svg" alt="圆盘条件数与验证误差曲线" loading="lazy">
               <figcaption>
                 <strong>圆盘：数据预算与可辨识性。</strong>

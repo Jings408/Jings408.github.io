@@ -68,7 +68,7 @@ python3 -m http.server 8000
 ## 已验证
 
 - 用 Chrome headless 渲染，`.math` 中的 **8** 个显示公式全部输出为 `mjx-container` SVG。
-- 3 张训练曲线为矢量 SVG，10 个任务示意图标、2 段 MP4 均可通过本地 HTTP 服务加载。
+- 4 张训练曲线为矢量 SVG（含 Push PPO 的 step-vs-return 曲线），10 个任务示意图标、2 段 MP4 均可通过本地 HTTP 服务加载。
 - MP4 播放检查：`readyState=4`、`paused=false`、无 `error`；SO101 1024×608，双积分器 960×540。
 - 48 个锚点链接全部有对应目标；桌面 1440px、移动 420px 均无横向滚动。
 - 深色/浅色主题、侧边栏目录、代码复制按钮均可切换。

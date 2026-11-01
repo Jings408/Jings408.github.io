@@ -165,6 +165,66 @@ fig.suptitle("RGB 验证曲线：旧 / 新 AE", fontsize=13, color=INK, y=1.03)
 fig.savefig(FIG / "rgb_validation.svg", bbox_inches="tight")
 plt.close(fig)
 
+# ---------------------------------------------------------------- Push PPO return
+from matplotlib.lines import Line2D
+
+push_root = ROOT / "runs/non_rgb_overnight_20261101_HIhnEVgJ"
+push_seeds = [
+    ("seed81", push_root / "push_so101/train/TRAINING.json",
+     push_root / "push_so101/train/FROZEN.json", TEAL),
+    ("seed82", push_root / "push_extra_seeds/train_seed82/TRAINING.json",
+     push_root / "push_extra_seeds/train_seed82/FROZEN.json", BLUE),
+    ("seed83", push_root / "push_extra_seeds/train_seed83/TRAINING.json",
+     push_root / "push_extra_seeds/train_seed83/FROZEN.json", AMBER),
+]
+
+
+def rolling(y, w=25):
+    return np.convolve(y, np.ones(w) / w, mode="valid")
+
+
+fig, axes = plt.subplots(1, 2, figsize=(9.4, 4.2))
+fig.subplots_adjust(top=0.80, bottom=0.20, left=0.08, right=0.98, wspace=0.28)
+handles, labels = [], []
+for name, train_path, frozen_path, color in push_seeds:
+    data = json.load(train_path.open())
+    steps = np.arange(1, len(data) + 1) * 2048
+    ret = np.array([np.mean([e["reward"] for e in u["episodes"]]) for u in data])
+    sec = np.array([np.mean([e["seconds"] for e in u["episodes"]]) for u in data])
+
+    axes[0].plot(steps, ret, color=color, alpha=0.18, linewidth=0.8)
+    axes[1].plot(steps, sec, color=color, alpha=0.18, linewidth=0.8)
+    line, = axes[0].plot(steps[24:], rolling(ret), color=color, linewidth=2.2)
+    axes[1].plot(steps[24:], rolling(sec), color=color, linewidth=2.2)
+    handles.append(line)
+    labels.append(name)
+
+    selected = json.load(frozen_path.open())["selected_update"]
+    sel_step = selected * 2048
+    for ax in axes:
+        ax.axvline(sel_step, color=color, linestyle=":", linewidth=1.1, alpha=0.55)
+    idx = min(max(selected - 25, 0), len(rolling(ret)) - 1)
+    axes[0].scatter([sel_step], [rolling(ret)[idx]], color=color, s=38, zorder=5,
+                    edgecolors="white", linewidths=0.8)
+
+for ax, title, ylabel in [
+        (axes[0], "平均回合回报", "回报"),
+        (axes[1], "平均回合时长", "秒")]:
+    ax.set_xlabel("环境步数")
+    ax.set_ylabel(ylabel)
+    ax.set_title(title, fontsize=11, pad=8)
+    ax.set_xlim(0, 2_100_000)
+    ax.set_xticks([0, 500_000, 1_000_000, 1_500_000, 2_000_000],
+                  ["0", "0.5M", "1.0M", "1.5M", "2.0M"])
+    clean(ax)
+axes[0].set_ylim(160, 178)
+axes[1].set_ylim(22, 36)
+fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 0.92),
+           ncol=3, frameon=False, fontsize=9.5)
+fig.suptitle("Push Full-M PPO：步数 vs 回报", fontsize=13, color=INK, y=0.99)
+fig.savefig(FIG / "push_ppo_return.svg", bbox_inches="tight")
+plt.close(fig)
+
 # ---------------------------------------------------------------- point-mass animation
 from matplotlib.animation import FFMpegWriter
 
