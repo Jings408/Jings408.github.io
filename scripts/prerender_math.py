@@ -33,6 +33,12 @@ finally:
 
 dom = proc.stdout
 blocks = re.findall(r'<div class="math">(.*?)</div>', dom, re.S)
+blocks = [re.sub(r'<mjx-assistive-mml.*?</mjx-assistive-mml>', '', b, flags=re.S) for b in blocks]
+# Keep display/centering/responsiveness even if the old CSS is cached.
+blocks = [b.replace('style="position: relative;"',
+                    'style="position: relative;display:block;text-align:center;margin:0.8rem 0;"')
+          .replace('style="vertical-align:', 'style="max-width:100%;height:auto;vertical-align:')
+          for b in blocks]
 cache = re.search(r'<svg id="MJX-SVG-global-cache".*?</svg>', dom, re.S)
 if len(blocks) != 8 or cache is None:
     raise SystemExit(f"unexpected math render: blocks={len(blocks)} cache={cache is not None}")
