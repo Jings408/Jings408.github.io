@@ -83,7 +83,7 @@ for prefix, linestyle in [("constant", "-"), ("varying", "--")]:
 axes[0].set_xscale("log", base=2)
 axes[0].set_yscale("log")
 axes[0].set_xticks([128, 512, 2048], ["128", "512", "2048"])
-axes[0].set_xlabel("训练样本数")
+axes[0].set_xlabel("训练转移数 (s, a, s')")
 axes[0].set_ylabel("条件数")
 axes[0].set_title("条件数（实线 constant / 虚线 varying）", fontsize=10.5, pad=8)
 clean(axes[0])
@@ -108,12 +108,14 @@ for route, label, color in routes:
 axes[1].set_xscale("log", base=2)
 axes[1].set_yscale("log")
 axes[1].set_xticks([128, 512, 2048], ["128", "512", "2048"])
-axes[1].set_xlabel("训练样本数")
+axes[1].set_xlabel("训练转移数 (s, a, s')")
 axes[1].set_ylabel("验证 D RMSE")
 axes[1].set_title("varying：验证 D RMSE", fontsize=10.5, pad=8)
 clean(axes[1])
 
 fig.suptitle("圆盘：数据预算、条件数与验证误差", fontsize=13, color=INK, y=1.03)
+fig.text(0.5, -0.02, "每档 128 / 512 / 2048 条转移；验证集独立采样",
+         ha="center", va="bottom", fontsize=9.5, color="#5f7180")
 fig.savefig(FIG / "book_disk_training.svg", bbox_inches="tight")
 plt.close(fig)
 

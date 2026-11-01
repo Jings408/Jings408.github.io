@@ -679,7 +679,7 @@ python scripts/run_dinov2_photometric_v1.py \
         <!-- ============================================================ curves -->
         <section id="curves">
           <h2>训练曲线</h2>
-          <p>以下曲线由运行目录中的 CSV / JSON 重新绘制为矢量 SVG，不是手工描点；缩放后仍然清晰。</p>
+          <p>以下曲线由运行目录中的 CSV / JSON 重绘为矢量 SVG，可缩放。</p>
 
           <div class="figure-grid">
             <figure class="figure-card">
@@ -698,7 +698,8 @@ python scripts/run_dinov2_photometric_v1.py \
               <img src="assets/figures/book_disk_training.svg" alt="圆盘条件数与验证误差曲线" loading="lazy">
               <figcaption>
                 <strong>圆盘：数据预算与可辨识性。</strong>
-                左：条件数随样本数（实线 constant / 虚线 varying）；右：varying 响应的验证 D RMSE。
+                左：条件数随训练转移数（实线 constant / 虚线 varying）；右：varying 响应的验证 D RMSE。
+                每档 128/512/2048 条转移；验证集独立采样。
                 数据：<code>book_disk/fit_diagnostics.json</code>、<code>training_curves.csv</code>（seed41，ordinary）。
               </figcaption>
             </figure>
@@ -714,7 +715,7 @@ python scripts/run_dinov2_photometric_v1.py \
               <img src="assets/figures/rgb_validation.svg" alt="RGB 验证曲线：旧 AE 与新 AE" loading="lazy">
               <figcaption>
                 <strong>RGB 验证：旧 / 新 AE。</strong>
-                左：24 个验证案例的成功数；右：平均积分误差。单训练种子，已观察案例。
+                左：24 个验证案例的成功数；右：平均积分误差。
                 数据：<code>rgb_representation_v2/figures_01/PROVENANCE.json</code>。
               </figcaption>
             </figure>
