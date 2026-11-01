@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>镇定学习工具箱 · Stabilization Learning</title>
+  <meta name="description" content="基于可学习度量与 Lyapunov 候选函数的控制学习工具箱：Env、Algo、Runner 三层，覆盖状态控制、观测器、视觉伺服与接触推动。">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: { fontCache: 'global' },
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+    };
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+  <div id="progress"></div>
+
+  <header class="topbar">
+    <button class="icon-btn" id="menu-toggle" aria-label="打开目录">☰</button>
+    <a class="brand" href="#overview">
+      <span class="brand-mark">SL</span>
+      <span>Stabilization Learning</span>
+    </a>
+    <nav class="topnav" aria-label="顶部导航">
+      <a href="#architecture">架构</a>
+      <a href="#quickstart">快速开始</a>
+      <a href="#recipes">任务配方</a>
+      <a href="#extend">扩展</a>
+      <a href="#commands">命令参考</a>
+    </nav>
+    <button class="icon-btn" id="theme-toggle" aria-label="切换深浅色">◐</button>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="文档目录">
+      <h2>开始</h2>
+      <ul>
+        <li><a href="#overview">概览</a></li>
+        <li><a href="#architecture">架构</a></li>
+        <li><a href="#environments">环境</a></li>
+        <li><a href="#tasks">任务示意</a></li>
+        <li><a href="#algorithms">算法</a></li>
+      </ul>
+      <h2>使用</h2>
+      <ul>
+        <li><a href="#install">安装</a></li>
+        <li><a href="#quickstart">快速开始</a></li>
+        <li><a href="#api">Python API</a></li>
+        <li><a href="#workflow">统一训练</a></li>
+        <li><a href="#config">配置</a></li>
+        <li><a href="#recipes">任务配方</a></li>
+        <li class="sub"><a href="#recipe-state">状态控制</a></li>
+        <li class="sub"><a href="#recipe-observer">观测器</a></li>
+        <li class="sub"><a href="#recipe-robot">机器人 / 跟踪</a></li>
+        <li class="sub"><a href="#recipe-push">Push / SO101</a></li>
+        <li class="sub"><a href="#recipe-rgb">书稿 RGB</a></li>
+        <li class="sub"><a href="#recipe-scratch">Scratch 套件</a></li>
+        <li class="sub"><a href="#recipe-vision">VIP / DINOv2</a></li>
+        <li><a href="#effects">训练效果</a></li>
+        <li><a href="#curves">训练曲线</a></li>
+        <li><a href="#animations">任务动画</a></li>
+        <li><a href="#outputs">输出结构</a></li>
+      </ul>
+      <h2>扩展</h2>
+      <ul>
+        <li><a href="#extend">扩展新任务</a></li>
+        <li><a href="#gmm">GMM-D</a></li>
+        <li><a href="#l-learning">L 学习</a></li>
+      </ul>
+      <h2>参考</h2>
+      <ul>
+        <li><a href="#commands">命令参考</a></li>
+        <li><a href="#troubleshooting">常见问题</a></li>
+        <li><a href="#reading">延伸阅读</a></li>
+      </ul>
+    </aside>
+
+    <main id="main">
+      <div class="content">
+
+        <!-- ============================================================ overview -->
+        <section id="overview" class="hero">
+          <div class="eyebrow">Project Documentation</div>
+          <h1>镇定学习工具箱</h1>
+          <p class="lead">
+            基于可学习度量与 Lyapunov 候选函数的控制学习工具箱。统一 <strong>Env</strong>、
+            <strong>Algo</strong>、<strong>Runner</strong> 三层，覆盖状态控制、轨迹跟踪、观测器、
+            视觉伺服与接触推动。
+          </p>
+          <div class="badges">
+            <span class="badge">Python 3.10+</span>
+            <span class="badge">PyTorch</span>
+            <span class="badge">Gymnasium</span>
+            <span class="badge">MuJoCo</span>
+            <span class="badge">Env / Algo / Runner</span>
+          </div>
+          <div class="actions">
+            <a class="btn primary" href="#quickstart">快速开始 →</a>
+            <a class="btn" href="#architecture">查看架构</a>
+            <a class="btn" href="#commands">命令参考</a>
+          </div>
+        </section>
+
+        <div class="grid three">
+          <div class="card teal">
+            <div class="kicker">Env</div>
+            <h3>物理与任务</h3>
+            <p>状态、观测、动作边界、真实转移、成功与终止判据。9 个注册任务，另有 RGB、观测器、圆盘、网格和 SO101 专用环境。</p>
+          </div>
+          <div class="card teal">
+            <div class="kicker">Algo</div>
+            <h3>度量与控制</h3>
+            <p>表征、正定度量 <code>M</code>、策略、Critic、损失与优化器。支持模型梯度、PPO、离散 SAC、解析控制和 RGB 变体。</p>
+          </div>
+          <div class="card teal">
+            <div class="kicker">Runner</div>
+            <h3>训练与报告</h3>
+            <p>preflight、采样、预热、更新、验证、冻结、独立测试、快照和报告。每个实验使用独立输出目录。</p>
+          </div>
+        </div>
+
+        <h2>共同数学对象</h2>
+        <p>所有任务共享同一个候选函数结构：在误差或特征坐标中学习正定度量 <code>M</code>，用它构造二次型候选函数，并记录一步下降量。</p>
+
+        <div class="math">
+          \[
+            V_\theta(e,c)=e^\top M_\theta(e,c)e,\qquad M_\theta(e,c)\succ0
+          \]
+        </div>
+        <div class="math">
+          \[
+            D_\theta(s,a)=V_\theta(s')-V_\theta(s),\qquad
+            M=LL^\top+\varepsilon I
+          \]
+        </div>
+
+        <p>模型梯度、PPO、离散 SAC 或解析交互矩阵把 <code>M</code> 转成控制量；闭环样本再用来更新表征、度量或性能估计器。RGB 书稿实现使用带系数的形式：</p>
+
+        <div class="math">
+          \[
+            V=\tfrac12 e^\top M e,\qquad
+            e=\frac{\phi(I)-\phi(I^*)}{4}
+          \]
+        </div>
+        <div class="math">
+          \[
+            J_*=\frac14\left.\frac{\partial\phi}{\partial I}\right|_{I^*}L_I(I^*,\hat Z,K)
+          \]
+        </div>
+        <div class="math">
+          \[
+            H=J_*^\top MJ_*+0.01\operatorname{diag}(J_*^\top MJ_*)+\eta I,\qquad
+            u=\operatorname{sat}\left(-\lambda H^{-1}J_*^\top Me\right)
+          \]
+        </div>
+
+        <div class="note">
+          <strong>读法</strong>
+          <code>V</code> 是候选函数，不是全局稳定性证明；训练和报告关注物理误差、到达时间、输入成本与真实 <code>V</code> 变化。
+        </div>
+
+        <!-- ============================================================ architecture -->
+        <section id="architecture">
+          <h2>架构：Env、Algo、Runner</h2>
+          <p>仓库把物理环境、学习算法与实验调度分开。Env 不依赖学习库；Algo 不负责采样流程；Runner 负责把两者接起来，并保存完整的实验记录。</p>
+
+          <figure class="figure-card architecture-figure">
+            <a href="assets/diagrams/architecture.svg" target="_blank" rel="noopener">
+              <img src="assets/diagrams/architecture.svg"
+                   alt="镇定学习工具箱五面板架构总览：Env、Algo、Runner、书稿 RGB、Push/SO101"
+                   loading="lazy">
+            </a>
+            <figcaption>
+              <strong>五面板架构总览。</strong>
+              1 环境层：任务、观测、物理与判据；2 算法层：编码器、度量 <code>M</code>、候选函数与下降量；
+              3 调度层：preflight → 训练 → 冻结 → 测试 → 报告；4 书稿 RGB：图像 → AE → 特征差 → FastDepth/交互矩阵 → 控制；
+              5 Push/SO101：标定响应 → Full-M PPO → 冻结 <code>M</code> → MuJoCo 接触。
+              <a href="assets/diagrams/architecture.svg" target="_blank" rel="noopener">打开原图</a>。
+            </figcaption>
+          </figure>
+
+          <div class="arch">
+            <div class="arch-top">Runner · 配置与入口<br><span style="font-weight:500;color:var(--muted);font-size:.9rem">preflight → 采样 → 预热 → 更新 → 验证 → 冻结 → 测试 → 报告</span></div>
+            <div class="arch-row">
+              <div class="arch-box">
+                <strong>Env：<code>stabilization-gym</code></strong>
+                物理转移、观测、动作边界、成功与终止判据。
+              </div>
+              <div class="arch-box">
+                <strong>Algo：<code>stabilization-learning-control</code></strong>
+                表征、<code>M</code>、策略、Critic、损失与优化器。
+              </div>
+            </div>
+            <div class="arch-arrow">Env ⇄ 观测 / 成本 ⇄ Algo　　Runner 负责配置与调度</div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>层</th><th>职责</th><th>代码</th></tr></thead>
+              <tbody>
+                <tr><td>Env</td><td>状态转移、观测、动作界限、终止与保持判据</td><td><code>stabilization-gym/stabilization_gym</code></td></tr>
+                <tr><td>Algo</td><td>特征、<code>M</code>、策略、Critic、损失与优化器</td><td><code>stabilization-learning-control/stabilization_learning</code></td></tr>
+                <tr><td>Runner</td><td>采样、预热、训练、验证、冻结、测试与保存</td><td><code>extensions/reproducible_training_v4</code> 等</td></tr>
+                <tr><td>入口</td><td>命令行与具体实验配置</td><td><code>scripts/</code>、<code>configs/</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="tip">
+            <strong>扩展口诀</strong>
+            新任务写 Env；新算法写 Algo；新实验流程写 Runner。三者通过明确的接口契约连接，不互相替代。
+          </div>
+        </section>
+
+        <!-- ============================================================ environments -->
+        <section id="environments">
+          <h2>环境</h2>
+          <p>9 个环境可以通过 <code>stabilization_gym.make(...)</code> 直接创建；书稿专用任务通过各自的 Runner 或适配器使用。</p>
+
+          <h3>注册环境</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>注册名</th><th>物理任务</th><th>类型</th><th>书稿</th></tr></thead>
+              <tbody>
+                <tr><td><code>coupled_linear</code></td><td>双质量耦合线性镇定</td><td>状态控制</td><td>第 2、6 章</td></tr>
+                <tr><td><code>point_mass</code></td><td>二维双积分器</td><td>状态控制</td><td>第 2、6、8、11 章</td></tr>
+                <tr><td><code>pendulum</code></td><td>力矩驱动倒立摆局部镇定</td><td>状态控制</td><td>第 2、6 章</td></tr>
+                <tr><td><code>cartpole</code></td><td>全状态车摆局部镇定</td><td>状态控制</td><td>第 2、6 章</td></tr>
+                <tr><td><code>two_link_arm</code></td><td>平面双连杆关节定位</td><td>机器人</td><td>第 2、6、8 章</td></tr>
+                <tr><td><code>unicycle_tracking</code></td><td>非完整独轮车圆轨迹跟踪</td><td>跟踪</td><td>第 2、6 章</td></tr>
+                <tr><td><code>multirotor_tracking</code></td><td>平面多旋翼悬停 / 圆轨迹</td><td>机器人</td><td>第 2、5、6 章</td></tr>
+                <tr><td><code>push_any_shape</code></td><td>标定响应模型上的通用 Push</td><td>接触推动</td><td>第 14 章</td></tr>
+                <tr><td><code>visual_servo</code></td><td>自生成纹理 + DCT 特征轻量伺服</td><td>视觉伺服</td><td>第 10、13 章</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>专用任务</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>任务</th><th>代码</th><th>学习 / 运行路径</th></tr></thead>
+              <tbody>
+                <tr><td>室内 RGB 伺服</td><td><code>envs/tasks/rgb_book_physical.py</code>、<code>original_visual_online.py</code></td><td>RGB 书稿 Runner / scratch RGB</td></tr>
+                <tr><td>观测器：电机速度</td><td><code>observation/environment.py</code>，<code>motor_speed</code></td><td>观测 v5 / <code>observer_model_gradient</code></td></tr>
+                <tr><td>观测器：车摆输出</td><td><code>cartpole_output</code></td><td>观测 v5</td></tr>
+                <tr><td>观测器：合作位姿</td><td><code>cooperative_pose</code>（13 维）</td><td>观测 v5</td></tr>
+                <tr><td>直流电机状态控制</td><td><code>extensions/state_conditioned_m_v1/envs/dc_motor.py</code></td><td><code>dc_motor_gradient</code></td></tr>
+                <tr><td>一维圆盘推动</td><td><code>extensions/book_disk_overnight_v1/env.py</code></td><td>known model / direct D / identified / GMM-D</td></tr>
+                <tr><td>95 状态网格 MDP</td><td><code>extensions/book_grid_overnight_v1/env.py</code></td><td>表格策略迭代 / hitting certificate</td></tr>
+                <tr><td>SO101 关节接触</td><td><code>extensions/joint_certificate_v2/arm.py</code></td><td>冻结 <code>M</code> 在 MuJoCo 中执行</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="warn">
+            <strong>两条视觉路线不要混用</strong>
+            <code>visual_servo</code> 是 DCT 轻量任务；书稿室内 RGB 使用 AE、FastDepth 和专用 Runner，两者的观测与控制链路不同。
+          </div>
+        </section>
+
+        <!-- ============================================================ tasks -->
+        <section id="tasks">
+          <h2>任务示意图</h2>
+          <p>从简单的双积分器到视觉伺服和接触推动，所有任务共享同一套 Env / Algo / Runner 接口。点击卡片进入对应配方。</p>
+
+          <div class="task-grid">
+            <a class="task-card" href="#recipe-state">
+              <img src="assets/tasks/point_mass.svg" alt="二维双积分器示意图" loading="lazy">
+              <h4>质点 / 双积分器</h4>
+              <p>状态控制、D 学习与最小可复现实验的基础系统。</p>
+            </a>
+            <a class="task-card" href="#recipe-state">
+              <img src="assets/tasks/pendulum.svg" alt="倒立摆示意图" loading="lazy">
+              <h4>倒立摆</h4>
+              <p>力矩驱动，局部镇定；用于比较不同度量与控制构造。</p>
+            </a>
+            <a class="task-card" href="#recipe-state">
+              <img src="assets/tasks/cartpole.svg" alt="车摆示意图" loading="lazy">
+              <h4>车摆</h4>
+              <p>全状态局部镇定；输出反馈另走观测器任务。</p>
+            </a>
+            <a class="task-card" href="#recipe-robot">
+              <img src="assets/tasks/two_link.svg" alt="平面双连杆示意图" loading="lazy">
+              <h4>平面双连杆</h4>
+              <p>关节定位；模型梯度与回合 PPO 都可使用。</p>
+            </a>
+            <a class="task-card" href="#recipe-robot">
+              <img src="assets/tasks/multirotor.svg" alt="多旋翼示意图" loading="lazy">
+              <h4>多旋翼</h4>
+              <p>平面悬停与圆轨迹跟踪；机器人基准的一类。</p>
+            </a>
+            <a class="task-card" href="#recipe-push">
+              <img src="assets/tasks/push_disk.svg" alt="圆盘推动示意图" loading="lazy">
+              <h4>圆盘推动</h4>
+              <p>已知模型、直接 D、辨识模型与 GMM-D 的四路线示例。</p>
+            </a>
+            <a class="task-card" href="#effects">
+              <img src="assets/tasks/grid.svg" alt="95 状态网格示意图" loading="lazy">
+              <h4>95 状态网格</h4>
+              <p>有限 MDP 的表格策略迭代、目标与陷阱统计。</p>
+            </a>
+            <a class="task-card" href="#recipe-rgb">
+              <img src="assets/tasks/rgb_camera.svg" alt="室内 RGB 相机示意图" loading="lazy">
+              <h4>室内 RGB</h4>
+              <p>AE 特征 + FastDepth + 目标处交互矩阵的解析伺服。</p>
+            </a>
+            <a class="task-card" href="#recipe-observer">
+              <img src="assets/tasks/observer.svg" alt="观测器示意图" loading="lazy">
+              <h4>观测器</h4>
+              <p>电机速度、车摆输出、合作位姿；学习观测度量。</p>
+            </a>
+            <a class="task-card" href="#recipe-push">
+              <img src="assets/tasks/so101.svg" alt="SO101 机械臂示意图" loading="lazy">
+              <h4>SO101 接触</h4>
+              <p>冻结 Push 模型，在 MuJoCo 关节接触中执行。</p>
+            </a>
+          </div>
+        </section>
+
+        <!-- ============================================================ algorithms -->
+        <section id="algorithms">
+          <h2>算法</h2>
+          <p>统一 v4 目前注册 6 个核心后端；另有 Full-M PPO、D 学习 / GMM-D、RGB Actor-Critic 和视觉基础模型对照等研究算法。</p>
+
+          <h3>统一 v4 核心后端</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>后端名</th><th>核心类 / 实现</th><th>更新依据</th><th>典型任务</th></tr></thead>
+              <tbody>
+                <tr><td><code>state_model_gradient</code></td><td><code>StateModelGradientLearner</code> / <code>FullHorizonMetricLearner</code></td><td>可微模型传播完整时域成本，更新 M / 策略</td><td>状态控制、观测器</td></tr>
+                <tr><td><code>observer_model_gradient</code></td><td><code>ObserverModelGradientLearner</code></td><td>观测模型 + 估计误差</td><td>三个观测任务</td></tr>
+                <tr><td><code>episode_ppo</code></td><td><code>StabilizationLearner</code>（metric PPO）</td><td>采样回合，PPO 更新策略与价值</td><td>机器人、联合 Push</td></tr>
+                <tr><td><code>push_discrete_sac</code></td><td>Push 离散 SAC 后端</td><td>候选动作 Q + 熵正则</td><td>Push-SAC、E13 类任务</td></tr>
+                <tr><td><code>dc_motor_gradient</code></td><td>DC motor 状态相关 M</td><td>模型梯度</td><td>直流电机状态控制</td></tr>
+                <tr><td><code>rgb_legacy</code></td><td>RGB 书稿后端</td><td>AE 表征 + 导数 Critic + M</td><td>室内 RGB 解析伺服</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>专用 / 模型型算法</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>算法</th><th>实现</th><th>说明</th></tr></thead>
+              <tbody>
+                <tr><td><code>native_full_m_ppo</code></td><td><code>algos/pytorch/full_m_ppo/trainer.py</code></td><td>随机 Full-M Actor / Critic，联合时间、误差、切换、输入成本；用于 PushAnyShape / SO101</td></tr>
+                <tr><td>已知模型</td><td><code>book_disk</code></td><td>用已知动力学直接构造控制</td></tr>
+                <tr><td>直接 D 学习</td><td><code>book_disk</code></td><td>学习下降量 D，不显式辨识模型</td></tr>
+                <tr><td>辨识模型 + D</td><td><code>book_disk</code></td><td>先辨识参数 / 模型，再学习 D</td></tr>
+                <tr><td>GMM-D</td><td><code>book_disk</code></td><td>高斯混合局部模型 + D；目前只有一维圆盘</td></tr>
+                <tr><td>表格策略迭代</td><td><code>book_grid</code></td><td>95 状态有限 MDP；hitting certificate</td></tr>
+                <tr><td>L 学习</td><td><code>algos/model_based/contracts.py</code></td><td>拉格朗日动力学学习；接口已就绪，v4 后端待实现</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>RGB 研究变体</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>路径</th><th>内容</th></tr></thead>
+              <tbody>
+                <tr><td><code>rgb_scratch_ac_v1/v2</code></td><td>从随机 AE、M、Critic 学习 RGB Actor-Critic</td></tr>
+                <tr><td><code>rgb_pretrained_ac_v1</code></td><td>载入预训练 AE 的 Actor-Critic</td></tr>
+                <tr><td><code>rgb_book_reproduction_v1</code></td><td>对齐书稿室内 RGB 流程</td></tr>
+                <tr><td><code>rgb_foundation_v1</code></td><td>VIP / DINOv2 特征 + 光度交互矩阵 + 解析控制</td></tr>
+                <tr><td><code>rgb_vip_photometric_v1</code>、<code>rgb_dinov2_photometric_v1</code></td><td>两种预训练特征的闭环对照</td></tr>
+                <tr><td><code>rgb_cost_m_v2</code>、<code>rgb_stable_m_v1</code>、<code>rgb_eta_return_v1</code>、<code>rgb_longroll_v1</code></td><td>M 消融、长时域、证书回放和诊断变体</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============================================================ install -->
+        <section id="install">
+          <h2>安装</h2>
+          <div class="code"><pre><code>git clone &lt;repo&gt; &amp;&amp; cd stabilization-learning
+python -m venv .venv
+source .venv/bin/activate        # Windows: .\.venv\Scripts\Activate.ps1
+python -m pip install -U pip
+python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
+python -m stabilization_learning list</code></pre></div>
+
+          <div class="grid two">
+            <div class="card">
+              <h4>需要仿真</h4>
+              <p>MuJoCo 接触任务再安装：</p>
+              <div class="code"><pre><code>python -m pip install -r requirements-simulation.txt</code></pre></div>
+            </div>
+            <div class="card">
+              <h4>需要 GPU</h4>
+              <p>先按 PyTorch 官方说明安装与本机驱动匹配的 CUDA 版本，再安装本项目。</p>
+            </div>
+          </div>
+
+          <h3>验证</h3>
+          <div class="code"><pre><code>python -m pytest -q
+python scripts/check_publication.py</code></pre></div>
+          <p><code>python -m stabilization_learning list</code> 应列出所有注册任务。</p>
+        </section>
+
+        <!-- ============================================================ quickstart -->
+        <section id="quickstart">
+          <h2>快速开始：质点训练与配对评价</h2>
+          <p>先跑最短的免外部资产流程，确认安装、接口和输出目录都正常。</p>
+
+          <div class="code"><pre><code>python -m stabilization_learning train \
+  --config configs/public/point_mass_smoke.json \
+  --output runs/point_mass_demo
+
+python -m stabilization_learning evaluate \
+  --run runs/point_mass_demo --seeds 20001 20002</code></pre></div>
+
+          <div class="grid two">
+            <div class="card">
+              <h4>产物</h4>
+              <ul>
+                <li><code>model.pt</code> 与训练历史</li>
+                <li><code>evaluation.json</code></li>
+                <li>同一组起点上比较学习 <code>M</code> 与单位 <code>M</code></li>
+              </ul>
+            </div>
+            <div class="card">
+              <h4>换成自己的实验</h4>
+              <ul>
+                <li>复制 <code>point_mass_smoke.json</code></li>
+                <li>改 <code>epochs</code>、<code>episodes</code>、<code>seed</code></li>
+                <li>输出目录用新名称</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="tip">
+            <strong>短配置只用于接口检查</strong>
+            <code>point_mass_smoke.json</code> 只有 4 条训练回合；要观察训练效果，换成更长的预算。
+          </div>
+        </section>
+
+        <!-- ============================================================ api -->
+        <section id="api">
+          <h2>Python API</h2>
+          <p>需要自定义采样、损失或诊断时，可以直接调用 Env 与 Algo。</p>
+
+          <div class="code"><pre><code>from stabilization_gym import make
+from stabilization_learning import StabilizationLearner, TrainConfig
+
+env = make("point_mass", max_steps=50)
+learner = StabilizationLearner(
+    env,
+    config=TrainConfig(episodes=4, batch_episodes=2, epochs=1),
+    env_id="point_mass",
+    env_kwargs={"max_steps": 50},
+)
+learner.train("runs/point_mass_api")
+env.close()</code></pre></div>
+
+          <p>正式多种子、多任务实验仍建议使用统一的 Runner：它负责冻结、独立测试、快照和报告。</p>
+        </section>
+
+        <!-- ============================================================ workflow -->
+        <section id="workflow">
+          <h2>统一 v4 工作流</h2>
+          <p>统一 Runner 把一次实验拆成固定阶段。每个实验使用新的输出目录；测试发生在全组模型冻结之后。</p>
+
+          <div class="steps">
+            <div class="step"><strong>写配置。</strong> 复制一个模板，声明 <code>jobs[]</code>、<code>backend</code>、任务、种子、预算与测试变体。</div>
+            <div class="step"><strong>preflight。</strong> 检查 schema、任务名、seeds、输出路径、Python 与初始化。</div>
+            <div class="step"><strong>train。</strong> 初始验证 → 采样/预热 → epoch 更新 → 验证 → 全组冻结 → 独立测试。</div>
+            <div class="step"><strong>快照。</strong> 确认进程退出、写锁释放后，采集运行快照。</div>
+            <div class="step"><strong>report。</strong> 读取快照生成独立报告、曲线和审计记录。</div>
+          </div>
+
+          <h3>preflight</h3>
+          <div class="code"><pre><code>python scripts/run_unified_training_v4.py preflight \
+  --config configs/public/unified_cpu_smoke.json \
+  --output runs/v4_preflight.json</code></pre></div>
+
+          <h3>train</h3>
+          <div class="code"><pre><code>python scripts/run_unified_training_v4.py train \
+  --config configs/public/unified_cpu_smoke.json \
+  --output runs/v4_demo</code></pre></div>
+
+          <h3>快照与报告</h3>
+          <div class="code"><pre><code>python scripts/capture_linux_run_snapshot.py \
+  --run runs/v4_demo --output runs/v4_process.json
+
+python scripts/run_unified_training_v4.py report \
+  --root runs/v4_demo --output runs/v4_report \
+  --process-snapshot runs/v4_process.json --compact</code></pre></div>
+
+          <p><code>--compact</code> 无损压缩曲线，不删除模型或原始记录。报告通常包含 <code>selected</code>、<code>initial</code>、<code>identity</code>、<code>fixed_M</code> 等测试变体。</p>
+        </section>
+
+        <!-- ============================================================ config -->
+        <section id="config">
+          <h2>配置怎么写</h2>
+          <p>一个最小 unified v4 配置：</p>
+
+          <div class="code"><pre><code>{
+  "schema": "unified_training_v4",
+  "maximum_minutes": 60,
+  "minimum_free_gib": 5,
+  "jobs": [{
+    "id": "state_point_mass",
+    "backend": "state_model_gradient",
+    "config": {
+      "task": "point_mass",
+      "seed": 41,
+      "total_updates": 256,
+      "batch_size": 16,
+      "hidden": 64,
+      "scales": [1.0],
+      "validation_seeds": [10001],
+      "test_seeds": [20001],
+      "physical": {"max_steps": 50}
+    },
+    "schedule": {"epochs": 8, "certificate_updates": 1}
+  }]
+}</code></pre></div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>字段</th><th>作用</th></tr></thead>
+              <tbody>
+                <tr><td><code>schema</code></td><td>固定为 <code>unified_training_v4</code></td></tr>
+                <tr><td><code>maximum_minutes</code> / <code>minimum_free_gib</code></td><td>整组实验的时间与磁盘资源门限</td></tr>
+                <tr><td><code>jobs[]</code></td><td>一个任务一个 job；多个 job 共享资源门限</td></tr>
+                <tr><td><code>backend</code></td><td>选择算法后端，如 <code>state_model_gradient</code>、<code>episode_ppo</code>、<code>rgb_legacy</code></td></tr>
+                <tr><td><code>config</code></td><td>任务名、种子、更新数、batch、hidden、初态尺度、物理步数</td></tr>
+                <tr><td><code>schedule</code></td><td>epoch 数、表征/Critic 预热、证书更新次数</td></tr>
+                <tr><td><code>test_variants</code></td><td>可选：<code>selected</code>、<code>initial</code>、<code>identity</code>、<code>fixed_M</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============================================================ recipes -->
+        <section id="recipes">
+          <h2>任务配方</h2>
+          <p>每个配方都使用新的输出目录。先用 smoke 配置验证链路，再换成长预算。</p>
+
+          <details class="recipe" id="recipe-state" open>
+            <summary>状态控制</summary>
+            <div class="body">
+              <div class="code"><pre><code>cp configs/public/unified_cpu_smoke.json /tmp/my_state.json
+# 改 task / seed / total_updates / scales / physical.max_steps
+python scripts/run_unified_training_v4.py preflight \
+  --config /tmp/my_state.json --output runs/my_state_preflight.json
+python scripts/run_unified_training_v4.py train \
+  --config /tmp/my_state.json --output runs/my_state</code></pre></div>
+              <p>常用任务：<code>coupled_linear</code>、<code>point_mass</code>、<code>pendulum</code>、<code>cartpole</code>。多初态尺度用 <code>scales: [1.0, 1.5, 2.0]</code>；测试变体用 <code>selected</code>、<code>initial</code>、<code>identity</code>、<code>fixed_M</code>。</p>
+            </div>
+          </details>
+
+          <details class="recipe" id="recipe-observer">
+            <summary>观测器</summary>
+            <div class="body">
+              <div class="code"><pre><code>python scripts/run_observer_training_v5.py preflight \
+  --config configs/public/observer_cpu_smoke.json \
+  --output runs/obs_preflight.json
+python scripts/run_observer_training_v5.py train \
+  --config configs/public/observer_cpu_smoke.json \
+  --output runs/obs_demo
+python scripts/run_observer_training_v5.py doctor \
+  --config configs/public/observer_cpu_smoke.json \
+  --output runs/obs_doctor.json</code></pre></div>
+              <p>三个任务：<code>motor_speed</code>、<code>cartpole_output</code>、<code>cooperative_pose</code>。每个 job 可单独设置 <code>scenarios</code>、<code>validation_scenarios</code>、<code>test_scenarios</code>。</p>
+            </div>
+          </details>
+
+          <details class="recipe" id="recipe-robot">
+            <summary>机器人 / 轨迹跟踪</summary>
+            <div class="body">
+              <div class="code"><pre><code># 在配置中把 backend 改为 episode_ppo
+# task 改为 two_link_arm / unicycle_tracking / multirotor_tracking
+python scripts/run_unified_training_v4.py preflight \
+  --config /tmp/my_robot.json --output runs/robot_preflight.json
+python scripts/run_unified_training_v4.py train \
+  --config /tmp/my_robot.json --output runs/my_robot</code></pre></div>
+              <p>主要参数：<code>updates</code>、<code>num_envs</code>、<code>epochs</code>、<code>minibatch</code>、<code>learning_rate</code>。配置模板在 <code>configs/unified_training_v1/</code> 与 <code>configs/public/</code>。</p>
+            </div>
+          </details>
+
+          <details class="recipe" id="recipe-push">
+            <summary>Push / SO101 联合成本</summary>
+            <div class="body">
+              <div class="code"><pre><code>CLI=scripts/run_joint_certificate_v2.py
+python "$CLI" push-prepare --output runs/calibration --max-hours 2
+python "$CLI" push-train \
+  --config configs/joint_certificate_v2/push_overnight.json \
+  --costs configs/joint_certificate_v2/push_costs.json \
+  --time-bank runs/calibration/time_bank.json \
+  --output runs/demo_push/train --max-hours 4
+python "$CLI" push-freeze --runs runs/demo_push/train \
+  --seeds 81 --output runs/demo_push/group.json --max-hours 0.1
+python "$CLI" push-test --run runs/demo_push/train \
+  --group-manifest runs/demo_push/group.json \
+  --output runs/demo_push/test --repeats 16 --max-hours 1
+python "$CLI" push-arm --run runs/demo_push/train \
+  --group-manifest runs/demo_push/group.json \
+  --output runs/demo_push/arm --repeats 4 --max-hours 2</code></pre></div>
+              <p>顺序：<code>push-prepare</code> → <code>push-train</code> → <code>push-freeze</code> → <code>push-test</code> / <code>push-arm</code>。多 seed 时先一次冻结，再分别测试。降阶 Push 用 <code>push-test</code>；SO101 关节接触用 <code>push-arm</code>。</p>
+            </div>
+          </details>
+
+          <details class="recipe" id="recipe-rgb">
+            <summary>书稿室内 RGB</summary>
+            <div class="body">
+              <div class="code"><pre><code>python scripts/run_rgb_book_reproduction_v1.py validate \
+  --config configs/rgb_book_reproduction_v1/engineering_smoke.json
+python scripts/run_rgb_book_reproduction_v1.py train \
+  --config configs/rgb_book_reproduction_v1/seed41_book.json \
+  --output runs/rgb_book_demo
+python scripts/run_rgb_book_reproduction_v1.py report \
+  --root runs/rgb_book_demo --output runs/rgb_book_report \
+  --process-snapshot runs/rgb_process.json</code></pre></div>
+              <p>先 <code>validate</code> 检查资源、权重、场景与配置，再 <code>train</code>。需要 AE 初始化、FastDepth、场景包与参考缓存；准备方式见 <code>docs/ASSETS.md</code>。</p>
+            </div>
+          </details>
+
+          <details class="recipe" id="recipe-scratch">
+            <summary>Scratch：从头 Push / SO101 / RGB</summary>
+            <div class="body">
+              <div class="code"><pre><code>python scripts/run_scratch_applications_v1.py prepare \
+  --config configs/scratch_applications_v1.json \
+  --output runs/scratch_demo --smoke
+python scripts/run_scratch_applications_v1.py run --run runs/scratch_demo
+python scripts/run_scratch_applications_v1.py stage \
+  --run runs/scratch_demo --stage push --seed 71
+python scripts/run_scratch_applications_v1.py report --run runs/scratch_demo
+python scripts/run_scratch_applications_v1.py deploy \
+  --bundle runs/scratch_demo/bundle --shape CWide --seed 71</code></pre></div>
+              <p><code>prepare</code> 生成运行计划与资源清单；<code>run</code> 按 push → so101 → rgb 顺序执行；<code>stage</code> 单独重跑某一阶段；<code>report</code> 汇总；<code>deploy</code> 用冻结 bundle 执行。</p>
+            </div>
+          </details>
+
+          <details class="recipe" id="recipe-vision">
+            <summary>VIP / DINOv2 冻结特征对照</summary>
+            <div class="body">
+              <div class="code"><pre><code>python scripts/run_vip_photometric_v1.py \
+  --output runs/vip_demo prepare
+python scripts/run_vip_photometric_v1.py \
+  --output runs/vip_demo run
+
+python scripts/run_dinov2_photometric_v1.py \
+  --output runs/dino_demo prepare
+python scripts/run_dinov2_photometric_v1.py \
+  --output runs/dino_demo run</code></pre></div>
+              <p><code>prepare</code> 复制源码、权重、场景与固定测试案例到新目录；<code>run</code> 用冻结编码器 + 目标图 + FastDepth + 光度交互矩阵做闭环评价。换编码器时保持同一批起点、同一增益和同一评价时域。</p>
+            </div>
+          </details>
+        </section>
+
+        <!-- ============================================================ effects -->
+        <section id="effects">
+          <h2>训练效果：训练后看什么</h2>
+          <p>一次训练会产出选中的模型、四组测试变体、成功率/成本/到达时间、轨迹与报告。先看 <code>selected</code> 相对 <code>initial</code>，再用 <code>identity</code> / <code>fixed_M</code> 看度量 <code>M</code> 的作用。</p>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>任务</th><th>训练 / 选择带来的变化</th></tr></thead>
+              <tbody>
+                <tr><td>状态控制</td><td>相对固定 Riccati 成本 <strong>−1.3% ～ −4.5%</strong>（5 seeds）</td></tr>
+                <tr><td>观测器</td><td>车摆 160 → 176/192；合作位姿 83 → 185–200/256</td></tr>
+                <tr><td>机器人</td><td>96/96 成功；成本按任务变化</td></tr>
+                <tr><td>Push / SO101</td><td>Push 32/32；SO101 31–32/32</td></tr>
+                <tr><td>RGB（prior vs random AE）</td><td>52/72 vs 33/72（seed41，P0，300 步）</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="muted" style="color:var(--muted);font-size:.88rem">上表是代表性结果；具体 seed、协议与完整逐例数据见各运行目录的报告。</p>
+        </section>
+
+        <!-- ============================================================ curves -->
+        <section id="curves">
+          <h2>训练曲线</h2>
+          <p>以下曲线由运行目录中的 CSV / JSON 重绘为矢量 SVG，可缩放。</p>
+
+          <div class="figure-grid">
+            <figure class="figure-card">
+              <img src="assets/figures/push_ppo_return.svg" alt="Push Full-M PPO 训练曲线：环境步数 vs 平均回合回报" loading="lazy">
+              <figcaption>
+                <strong>Push Full-M PPO：步数 vs 回报。</strong>
+                3 seeds（81/82/83），每 update 2,048 transitions，共 2.0M 环境步；
+                细线为逐 update 原始均值，粗线为 25-update 滑动平均；竖点线为验证选中的 update
+                （81: 820、82: 380、83: 600）。右图为平均回合时长。
+                数据：<code>push_so101/train/TRAINING.json</code>、
+                <code>push_extra_seeds/train_seed82/TRAINING.json</code>、
+                <code>train_seed83/TRAINING.json</code>。
+              </figcaption>
+            </figure>
+            <figure class="figure-card">
+              <img src="assets/figures/book_disk_training.svg" alt="圆盘条件数与验证误差曲线" loading="lazy">
+              <figcaption>
+                <strong>圆盘：数据预算与可辨识性。</strong>
+                左：条件数随训练转移数（实线 constant / 虚线 varying）；右：varying 响应的验证 D RMSE。
+                每档 128/512/2048 条转移；验证集独立采样。
+                数据：<code>book_disk/fit_diagnostics.json</code>、<code>training_curves.csv</code>（seed41，ordinary）。
+              </figcaption>
+            </figure>
+            <figure class="figure-card">
+              <img src="assets/figures/book_grid_policy_iteration.svg" alt="95 状态网格策略迭代曲线" loading="lazy">
+              <figcaption>
+                <strong>95 状态网格：策略迭代。</strong>
+                左：平均价值；右：Bellman 改进残差（对数轴）。reward 5 轮、constrained 3 轮。
+                数据：<code>book_grid/POLICY_ITERATION.json</code>（seed41）。
+              </figcaption>
+            </figure>
+            <figure class="figure-card">
+              <img src="assets/figures/rgb_validation.svg" alt="RGB 验证曲线：旧 AE 与新 AE" loading="lazy">
+              <figcaption>
+                <strong>RGB 验证：旧 / 新 AE。</strong>
+                左：24 个验证案例的成功数；右：平均积分误差。
+                数据：<code>rgb_representation_v2/figures_01/PROVENANCE.json</code>。
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <!-- ============================================================ animations -->
+        <section id="animations">
+          <h2>任务动画</h2>
+          <p>两段本地 MP4：一段来自 SO101 关节接触仿真，一段是二维双积分器 PD 控制示意。均可暂停、拖动和循环播放。</p>
+
+          <div class="video-grid">
+            <figure class="video-card">
+              <video controls muted loop playsinline autoplay preload="metadata"
+                     poster="assets/media/so101_push_poster.jpg">
+                <source src="assets/media/so101_push.mp4" type="video/mp4">
+                你的浏览器不支持 HTML5 video。
+              </video>
+              <figcaption>
+                <strong>SO101 关节接触仿真。</strong>
+                Push 任务 episode，选中策略在 MuJoCo 中执行；片段约 20 秒。
+                来源：<code>runs/non_rgb_overnight_20261101_HIhnEVgJ/push_so101/</code>。
+              </figcaption>
+            </figure>
+            <figure class="video-card">
+              <video controls muted loop playsinline autoplay preload="metadata"
+                     poster="assets/media/point_mass_poster.png">
+                <source src="assets/media/point_mass.mp4" type="video/mp4">
+                你的浏览器不支持 HTML5 video。
+              </video>
+              <figcaption>
+                <strong>二维双积分器 PD 控制示意。</strong>
+                从初始位置收敛到原点，用于展示状态控制动画；这是示意动画，不是实验结果。
+              </figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <!-- ============================================================ outputs -->
+        <section id="outputs">
+          <h2>输出结构</h2>
+          <div class="code"><pre><code>runs/my_experiment/
+  config.json              # 冻结配置
+  FROZEN.json              # 模型哈希与选择记录
+  FINAL_STATE.json         # 最终状态
+  events.jsonl             # 事件流
+  checkpoints/             # 训练检查点
+  validation/              # 验证轨迹与选模
+  test/                    # 独立测试轨迹
+  replay/                  # 回放（按回合）
+  report/                  # 独立报告与图</code></pre></div>
+
+          <div class="grid two">
+            <div class="card">
+              <h4>先看</h4>
+              <ul>
+                <li><code>report/REPORT.md</code></li>
+                <li>成功率、成本、到达时间</li>
+                <li>测试变体的配对差异</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h4>需要复现时</h4>
+              <ul>
+                <li>保留 <code>FROZEN.json</code></li>
+                <li>保留 <code>checkpoints/</code> 与 <code>replay/</code></li>
+                <li>报告用快照生成</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================ extend -->
+        <section id="extend">
+          <h2>扩展新任务</h2>
+          <div class="grid two">
+            <div class="card">
+              <h4>1. 写 Env</h4>
+              <ul>
+                <li>状态、观测、物理步进、动作界限</li>
+                <li>成功、失败、保持、时间截断</li>
+                <li>返回正成本；奖励转换放在算法侧</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h4>2. 接配置</h4>
+              <ul>
+                <li>在配置里声明 <code>task</code>、<code>seed</code>、预算</li>
+                <li>复制现有模板，保留 <code>schema</code> 与 <code>jobs</code> 结构</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h4>3. 选或写 backend</h4>
+              <ul>
+                <li>先复用现有 6 个后端之一</li>
+                <li>需要新损失/梯度时再写 <code>create_training_backend</code></li>
+              </ul>
+            </div>
+            <div class="card">
+              <h4>4. 测试</h4>
+              <ul>
+                <li>单测物理边界与动作约束</li>
+                <li>冻结后做配对测试</li>
+              </ul>
+            </div>
+          </div>
+
+          <h3 id="gmm">GMM-D：局部增量模型</h3>
+          <p>GMM-D 把状态—动作分区后拟合非负局部增量增益，预测形式为：</p>
+          <div class="math">
+            \[
+              \Delta=a\sum_k h_k(x,a)\,b_k,\qquad b_k\ge 0
+            \]
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>环节</th><th>接口 / 实现</th><th>状态</th></tr></thead>
+              <tbody>
+                <tr><td>数据</td><td><code>DiscreteTransitionBatch(state, applied_action, next_state, dt)</code></td><td>已有</td></tr>
+                <tr><td>拟合</td><td><code>GMMFitter.fit(batch, seed)</code> → <code>GMMTransitionModel</code></td><td>一维圆盘已适配</td></tr>
+                <tr><td>预测</td><td><code>predict_next(state, action)</code>、<code>memberships(state, action)</code></td><td>已有</td></tr>
+                <tr><td>评价</td><td>predicted D vs observed D；两端分别计算 <code>V</code></td><td>已有 NumPy 诊断</td></tr>
+                <tr><td>适配器</td><td><code>extensions/book_disk_overnight_v1/contract_adapter.py</code></td><td>已有</td></tr>
+                <tr><td>待做</td><td>多维 GMR、v4 backend、配置注册</td><td>待实现</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3 id="l-learning">L 学习：拉格朗日动力学</h3>
+          <p>L 学习拟合机械系统的拉格朗日结构，再用误差能量和跟踪控制器生成广义力。它<strong>不是</strong> Lyapunov critic 的 LAC，也不是现有神经 <code>M</code> 训练。</p>
+
+          <div class="math">
+            \[
+              L(q,\dot q)=\tfrac12\dot q^\top M_{\mathrm{mass}}(q)\dot q-P(q)
+            \]
+          </div>
+          <div class="math">
+            \[
+              \hat\tau=M_{\mathrm{mass}}(q)\ddot q+C(q,\dot q)\dot q+g(q)
+            \]
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>环节</th><th>接口</th><th>状态</th></tr></thead>
+              <tbody>
+                <tr><td>数据</td><td><code>MechanicalTrainingBatch(q, velocity, acceleration, applied_force, ...)</code></td><td>接口已就绪</td></tr>
+                <tr><td>拟合</td><td><code>LagrangianFitter</code> → <code>LagrangianDynamics</code></td><td>待实现</td></tr>
+                <tr><td>模型</td><td><code>mass_matrix</code>、<code>coriolis_matrix</code>、<code>potential</code>、<code>gravity</code>、<code>inverse_dynamics</code></td><td>接口已就绪</td></tr>
+                <tr><td>控制</td><td><code>LLearningController</code> + <code>MechanicalReference</code></td><td>待实现</td></tr>
+                <tr><td>能量</td><td><code>LLearningEnergy</code></td><td>待实现</td></tr>
+                <tr><td>待做</td><td>结构模型、训练器、跟踪控制器、积分补偿、v4 backend</td><td>待实现</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>把 GMM / L 接入 v4</h3>
+          <div class="steps">
+            <div class="step">在 <code>algos/model_based/</code> 实现对应协议。</div>
+            <div class="step">实现 <code>RunnerBackend</code>：初始化、采样、预热、逐 epoch 更新、验证、保存/加载、测试。</div>
+            <div class="step">在 <code>extensions/reproducible_training_v4/runner.py</code> 与 <code>validation.py</code> 注册具体实现。</div>
+            <div class="step">加配置 job（例如 <code>backend: gmm_d</code> / <code>l_learning</code>）、测试和报告字段。</div>
+          </div>
+
+          <div class="note">
+            <strong>当前注册状态</strong>
+            v4 只注册了 6 个核心后端；GMM-D 和 L 学习还没有注册名。接口与协作任务见
+            <code>docs/GMM_L_LEARNING_INTERFACES.md</code>。
+          </div>
+        </section>
+
+        <!-- ============================================================ commands -->
+        <section id="commands">
+          <h2>命令参考</h2>
+          <div class="table-wrap">
+            <table class="cmd-table">
+              <thead><tr><th>脚本</th><th>子命令</th><th>用途</th></tr></thead>
+              <tbody>
+                <tr><td>run_unified_training_v4.py</td><td>train, preflight, reproduce, compare, report, capture-runtime</td><td>状态、机器人、Push-SAC、RGB、DC 电机</td></tr>
+                <tr><td>run_observer_training_v5.py</td><td>train, preflight, doctor, compare</td><td>三个观测任务</td></tr>
+                <tr><td>run_joint_certificate_v2.py</td><td>push-prepare, push-train, push-freeze, push-test, push-arm, verify, analyze, init-night</td><td>Push / SO101 联合成本</td></tr>
+                <tr><td>run_rgb_book_reproduction_v1.py</td><td>train, supervise, worker, validate, report</td><td>书稿室内 RGB</td></tr>
+                <tr><td>run_scratch_applications_v1.py</td><td>prepare, run, stage, report, deploy</td><td>从头 Push / SO101 / RGB</td></tr>
+                <tr><td>run_vip_photometric_v1.py</td><td>prepare, run</td><td>VIP 冻结特征对照</td></tr>
+                <tr><td>run_dinov2_photometric_v1.py</td><td>prepare, run</td><td>DINOv2 冻结特征对照</td></tr>
+                <tr><td>run_book_disk_overnight_v1.py</td><td>--smoke / --output</td><td>圆盘四路线</td></tr>
+                <tr><td>run_book_grid_overnight_v1.py</td><td>run</td><td>95 状态网格</td></tr>
+                <tr><td>capture_linux_run_snapshot.py</td><td>--run, --output</td><td>报告前的运行快照</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>最短命令卡</h3>
+          <div class="code"><pre><code># 基础
+python -m stabilization_learning list
+python -m stabilization_learning train --config CFG --output RUN
+python -m stabilization_learning evaluate --run RUN --seeds 20001 20002
+
+# 统一 v4
+python scripts/run_unified_training_v4.py preflight --config CFG --output P.json
+python scripts/run_unified_training_v4.py train --config CFG --output RUN
+python scripts/run_unified_training_v4.py report --root RUN --output REP \
+  --process-snapshot SNAP.json --compact
+
+# 观测 v5
+python scripts/run_observer_training_v5.py train --config CFG --output RUN
+
+# Push / SO101
+python scripts/run_joint_certificate_v2.py push-prepare --output CAL --max-hours 2
+python scripts/run_joint_certificate_v2.py push-train --output RUN \
+  --time-bank CAL/time_bank.json --max-hours 4
+python scripts/run_joint_certificate_v2.py push-freeze --runs RUN \
+  --seeds 81 --output GROUP.json --max-hours 0.1</code></pre></div>
+        </section>
+
+        <!-- ============================================================ troubleshooting -->
+        <section id="troubleshooting">
+          <h2>常见问题</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>现象</th><th>处理</th></tr></thead>
+              <tbody>
+                <tr><td><code>ModuleNotFoundError</code></td><td>激活正确的 venv；先安装两个核心库</td></tr>
+                <tr><td>CUDA 不可用</td><td>重装与驱动匹配的 PyTorch；检查 <code>torch.cuda.is_available()</code></td></tr>
+                <tr><td>MuJoCo 导入失败</td><td>安装 <code>requirements-simulation.txt</code>；检查 GL 后端</td></tr>
+                <tr><td>输出目录已存在</td><td>换新目录；不要覆盖旧实验</td></tr>
+                <tr><td>显存不足</td><td>减小 <code>batch_size</code> / <code>num_envs</code>；先跑 smoke 配置</td></tr>
+                <tr><td>preflight 失败</td><td>按 JSON 报错修配置、任务名或路径，再重跑</td></tr>
+                <tr><td>进程未退出就 report</td><td>等写锁释放，再用快照脚本采集</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ============================================================ reading -->
+        <section id="reading">
+          <h2>延伸阅读</h2>
+          <div class="grid two">
+            <div class="card">
+              <h4>入门</h4>
+              <ul>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/README.md">README.md</a>：安装与最短命令</li>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/TRAINING.md">docs/TRAINING.md</a>：训练参数与输出协议</li>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/BOOK_TASKS.md">docs/BOOK_TASKS.md</a>：任务与书稿章节对应</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h4>深入</h4>
+              <ul>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/ARCHITECTURE.md">docs/ARCHITECTURE.md</a>：架构与扩展</li>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/ASSETS.md">docs/ASSETS.md</a>：外部资源与权重</li>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/GMM_L_LEARNING_INTERFACES.md">docs/GMM_L_LEARNING_INTERFACES.md</a>：GMM-D 与 L 学习</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h4>视觉伺服</h4>
+              <ul>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/RGB_ENCODER_SURVEY_20261101.md">RGB 编码器调研</a></li>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/RGB_MATCH_FREE_PRETRAINED_VISION_RESEARCH_20261031.md">无匹配预训练特征</a></li>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/RGB_RENDER_ALIGNMENT.md">RGB 跨平台渲染</a></li>
+              </ul>
+            </div>
+            <div class="card">
+              <h4>参考</h4>
+              <ul>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/RUN_STORAGE.md">docs/RUN_STORAGE.md</a>：存储与恢复</li>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning/blob/main/docs/IMPLEMENTATION_STATUS.md">docs/IMPLEMENTATION_STATUS.md</a>：实现状态</li>
+                <li><a href="https://github.com/rfly-learning-books/stabilization-learning">GitHub 仓库</a></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <footer>
+    镇定学习工具箱 · Stabilization Learning · 文档站
+    <br>
+    <span style="font-size:.8rem">公式由本地 MathJax 渲染；无外部依赖，可直接用浏览器打开。</span>
+  </footer>
+
+  <script src="assets/mathjax/tex-svg.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

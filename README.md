@@ -11,13 +11,14 @@ python3 -m http.server 8000
 # 浏览器打开 http://localhost:8000/website/
 ```
 
-站点没有构建步骤，也没有外部 CDN 依赖；`assets/mathjax/tex-svg.js` 是本地 MathJax，离线也能渲染公式。
+站点没有构建步骤，也没有外部 CDN 依赖。公式已预渲染为静态 SVG，不依赖 JavaScript；`assets/mathjax/tex-svg.js` 仅用于重新生成公式。
 
 ## 文件
 
 | 文件 | 作用 |
 |---|---|
-| `index.html` | 全部文档内容（单页 + 侧边栏锚点） |
+| `index.latex.html` | 文档源文件（含 LaTeX 公式） |
+| `index.html` | 预渲染后的静态页面（公式为 SVG，不依赖 JS） |
 | `styles.css` | 版式、深浅色、响应式、代码块、表格 |
 | `app.js` | 主题切换、移动端目录、复制按钮、目录高亮、进度条 |
 | `assets/mathjax/tex-svg.js` | 本地 MathJax 3（SVG 输出） |
@@ -28,6 +29,7 @@ python3 -m http.server 8000
 | `scripts/make_media.py` | 生成训练曲线和双积分器动画 |
 | `scripts/make_task_icons.py` | 生成任务示意图标 |
 | `scripts/make_architecture_svg.py` | 生成五面板架构图 |
+| `scripts/prerender_math.py` | 把 `index.latex.html` 中的 LaTeX 预渲染为静态 `index.html` |
 
 ## 内容结构
 
@@ -48,6 +50,7 @@ python3 -m http.server 8000
 /home/ajingshou/anaconda3/envs/drones/bin/python scripts/make_media.py
 /home/ajingshou/anaconda3/envs/drones/bin/python scripts/make_task_icons.py
 /home/ajingshou/anaconda3/envs/drones/bin/python scripts/make_architecture_svg.py
+python3 scripts/prerender_math.py
 ```
 
 `make_media.py` 从以下目录读取数据：
@@ -60,14 +63,14 @@ python3 -m http.server 8000
 
 ## 修改
 
-- 内容都在 `index.html`，按 `<section id="...">` 组织；侧边栏链接与 section id 对应。
+- 内容在 `index.latex.html`（LaTeX 源），按 `<section id="...">` 组织；改完后运行 `scripts/prerender_math.py` 生成静态 `index.html`。
 - 颜色、字体、间距在 `styles.css` 顶部的 CSS 变量里改。
-- 数学公式用 `\( ... \)` 和 `\[ ... \]`；MathJax 已跳过 `pre` / `code`，代码块里不会误渲染。
+- 数学公式用 `\( ... \)` 和 `\[ ... \]`；修改后重新运行 `scripts/prerender_math.py`，生成不依赖 JS 的静态 SVG。
 - 新增任务配方时，复制一个 `<details class="recipe" id="recipe-...">` 块，并在侧边栏加链接。
 
 ## 已验证
 
-- 用 Chrome headless 渲染，`.math` 中的 **8** 个显示公式全部输出为 `mjx-container` SVG。
+- 静态 `index.html` 内含 **8** 个预渲染的 `mjx-container` SVG，无 MathJax 运行时依赖；关闭 JavaScript 后公式仍正常。
 - 4 张训练曲线为矢量 SVG（含 Push PPO 的 step-vs-return 曲线），10 个任务示意图标、2 段 MP4 均可通过本地 HTTP 服务加载。
 - MP4 播放检查：`readyState=4`、`paused=false`、无 `error`；SO101 1024×608，双积分器 960×540。
 - 48 个锚点链接全部有对应目标；桌面 1440px、移动 420px 均无横向滚动。
